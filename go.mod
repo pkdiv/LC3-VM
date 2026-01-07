@@ -1,3 +1,3 @@
-module LC3VM
+module LC3
 
 go 1.25.5

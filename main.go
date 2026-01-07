@@ -72,27 +72,27 @@ func main() {
 		case OP_BR:
 			panic("Not Implemented")
 		case OP_ADD:
-			add(instr)
+			Add(instr)
 		case OP_LD:
-			ld(instr)
+			Ld(instr)
 		case OP_ST:
-			st(instr)
+			St(instr)
 		case OP_JSR:
 			panic("Not Implemented")
 		case OP_AND:
-			and(instr)
+			And(instr)
 		case OP_LDR:
-			ldr(instr)
+			Ldr(instr)
 		case OP_STR:
-			str(instr)
+			Str(instr)
 		case OP_RTI:
 			panic("Not Implemented")
 		case OP_NOT:
-			not(instr)
+			Not(instr)
 		case OP_LDI:
-			ldi(instr)
+			Ldi(instr)
 		case OP_STI:
-			sti(instr)
+			Sti(instr)
 		case OP_JMP:
 			panic("Not Implemented")
 		case OP_RES:
@@ -104,141 +104,5 @@ func main() {
 		}
 
 	}
-
-}
-
-func add(instr uint16) {
-	dr := (instr >> 9) & 0x0007
-	sr1 := (instr >> 6) & 0x0007
-	mode := (instr >> 5) & 0x0001
-	var operand2 uint16
-
-	// IF mode == 0 register mode
-	//         == 1 immediate mode
-	if mode == 0 {
-		sr2 := OP_CODE(instr & 7)
-		operand2 = reg[sr2]
-	} else {
-		imd := instr & 31             // Immediate mode can have values from 0 to 2^5 - 1
-		operand2 = signExtend(imd, 5) // Sign extend it
-	}
-
-	reg[dr] = reg[sr1] + operand2
-
-	// Set the R_COND based on the value in reg[dr]
-	updateFlag(dr)
-
-}
-
-func ld(instr uint16) {
-	dr := (instr >> 9) & 0x0007
-	offset9 := instr & 0x01FF
-	offset := signExtend(offset9, 9)
-	reg[dr] = memory[reg[R_PC]+offset]
-	updateFlag(dr)
-}
-
-func st(instr uint16) {
-	sr := (instr >> 9) & 0x0007
-	offset9 := instr & 0x01FF
-	offset := signExtend(offset9, 9)
-
-	memory[reg[R_PC]+offset] = reg[sr]
-}
-
-func and(instr uint16) {
-
-	dr := (instr >> 9) & 0x0007
-	sr1 := (instr >> 6) & 0x0007
-	mode := (instr >> 5) & 0x0001
-	var operand2 uint16
-
-	if mode == 0 {
-		sr2 := OP_CODE(instr & 7)
-		operand2 = reg[sr2]
-	} else {
-		imd := instr & 0x001F         // Immediate mode can have values from 0 to 2^5 - 1
-		operand2 = signExtend(imd, 5) // Sign extend it
-	}
-
-	reg[dr] = reg[sr1] & operand2
-
-	updateFlag(dr)
-
-}
-
-func ldr(instr uint16) {
-	dr := (instr >> 9) & 0x0007
-	base := (instr >> 6) & 0x0007
-
-	offset6 := instr & 0x00EF
-	offset := signExtend(offset6, 6)
-
-	reg[dr] = memory[reg[base]+offset]
-
-	updateFlag(dr)
-}
-
-func str(instr uint16) {
-	sr := (instr >> 9) & 0x0007
-	base := (instr >> 6) & 0x0007
-
-	offset6 := instr & 0x00EF
-	offset := signExtend(offset6, 6)
-
-	memory[reg[base]+offset] = reg[sr]
-
-}
-
-func not(instr uint16) {
-	dr := (instr >> 9) & 0x0007
-	sr := (instr >> 6) & 0x0007
-
-	reg[dr] = ^reg[sr]
-
-	updateFlag(dr)
-
-}
-
-func ldi(instr uint16) {
-	dr := (instr >> 9) & 0x0007
-	offset9 := instr & 0x01FF
-	offset := signExtend(offset9, 9)
-	reg[dr] = memory[memory[reg[R_PC]+offset]]
-	updateFlag(dr)
-}
-
-func sti(instr uint16) {
-	sr := (instr >> 9) & 0x0007
-	offset9 := instr & 0x01FF
-	offset := signExtend(offset9, 9)
-
-	memory[memory[reg[R_PC]+offset]] = reg[sr]
-
-}
-
-func updateFlag(register uint16) {
-	if reg[register] == 0 {
-		reg[R_COND] = uint16(FLAG_ZERO)
-	} else if reg[register] > 0 {
-		reg[R_COND] = uint16(FLAG_POS)
-	} else {
-		reg[R_COND] = uint16(FLAG_NEG)
-	}
-}
-
-// Extend any bit value to 16 bits
-func signExtend(value uint16, bitcount int) uint16 {
-
-	significantBit := value >> uint16(bitcount-1)
-	var extdValue uint16
-
-	if significantBit == 0 {
-		extdValue = 0x0000 | value
-	} else {
-		extdValue = (0xFFFF << bitcount) | value
-	}
-
-	return extdValue
 
 }
