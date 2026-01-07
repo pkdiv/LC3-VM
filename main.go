@@ -23,22 +23,22 @@ const (
 )
 
 const (
-	OP_BR   OP_CODE = 0 //branch
-	OP_ADD              // add
-	OP_LD               // load
-	OP_ST               // store
-	OP_JSR              // jump register
-	OP_AND              // bitwise and
-	OP_LDR              // load register
-	OP_STR              // store register
-	OP_RTI              // unused
-	OP_NOT              // bitwise not
-	OP_LDI              // load indirect
-	OP_STI              // store indirect
-	OP_JMP              // jump
-	OP_RES              // reserved (unused)
-	OP_LEA              // load effective address
-	OP_TRAP             // execute trap
+	OP_BR   OP_CODE = iota //branch
+	OP_ADD                 // add
+	OP_LD                  // load
+	OP_ST                  // store
+	OP_JSR                 // jump register
+	OP_AND                 // bitwise and
+	OP_LDR                 // load register
+	OP_STR                 // store register
+	OP_RTI                 // unused
+	OP_NOT                 // bitwise not
+	OP_LDI                 // load indirect
+	OP_STI                 // store indirect
+	OP_JMP                 // jump
+	OP_RES                 // reserved (unused)
+	OP_LEA                 // load effective address
+	OP_TRAP                // execute trap
 )
 
 const (
@@ -62,7 +62,7 @@ func main() {
 	for {
 
 		instr := memory[reg[R_PC]]
-		reg[R_PC] = reg[R_PC] + 1
+		reg[R_PC]++
 
 		// The 4 higher order bits store the OP_CODE of the instruction
 		// The 12 remaining bits are interpreted according to the specific instruction.
@@ -71,6 +71,14 @@ func main() {
 		switch op_code {
 		case OP_ADD:
 			add(instr)
+		case OP_LD:
+			ld(instr)
+		case OP_AND:
+			and(instr)
+		case OP_NOT:
+			not(instr)
+		case OP_LDI:
+			ldi(instr)
 		}
 
 	}
@@ -96,11 +104,58 @@ func add(instr uint16) {
 	reg[dr] = reg[sr1] + operand2
 
 	// Set the R_COND based on the value in reg[dr]
-	updateCondition(dr)
+	updateFlag(dr)
 
 }
 
-func updateCondition(register uint16) {
+func ld(instr uint16) {
+	dr := (instr >> 9) & 7
+	offset9 := instr & 0x00FF
+	offset := signExtend(offset9, 9)
+	reg[dr] = memory[reg[R_PC]+offset]
+	updateFlag(dr)
+}
+
+func and(instr uint16) {
+
+	dr := (instr >> 9) & 7
+	sr1 := (instr >> 6) & 7
+	mode := (instr >> 5) & 1
+	var operand2 uint16
+
+	if mode == 0 {
+		sr2 := OP_CODE(instr & 7)
+		operand2 = reg[sr2]
+	} else {
+		imd := instr & 31             // Immediate mode can have values from 0 to 2^5 - 1
+		operand2 = signExtend(imd, 5) // Sign extend it
+	}
+
+	reg[dr] = reg[sr1] & operand2
+
+	updateFlag(dr)
+
+}
+
+func not(instr uint16) {
+	dr := (instr >> 9) & 7
+	sr := (instr >> 6) & 7
+
+	reg[dr] = ^reg[sr]
+
+	updateFlag(dr)
+
+}
+
+func ldi(instr uint16) {
+	dr := (instr >> 9) & 7
+	offset9 := instr & 0x00FF
+	offset := signExtend(offset9, 9)
+	reg[dr] = memory[memory[reg[R_PC]+offset]]
+	updateFlag(dr)
+}
+
+func updateFlag(register uint16) {
 	if reg[register] == 0 {
 		reg[R_COND] = uint16(FLAG_ZERO)
 	} else if reg[register] > 0 {
