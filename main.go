@@ -69,16 +69,38 @@ func main() {
 		op_code := OP_CODE(instr >> 12)
 
 		switch op_code {
+		case OP_BR:
+			panic("Not Implemented")
 		case OP_ADD:
 			add(instr)
 		case OP_LD:
 			ld(instr)
+		case OP_ST:
+			st(instr)
+		case OP_JSR:
+			panic("Not Implemented")
 		case OP_AND:
 			and(instr)
+		case OP_LDR:
+			ldr(instr)
+		case OP_STR:
+			str(instr)
+		case OP_RTI:
+			panic("Not Implemented")
 		case OP_NOT:
 			not(instr)
 		case OP_LDI:
 			ldi(instr)
+		case OP_STI:
+			sti(instr)
+		case OP_JMP:
+			panic("Not Implemented")
+		case OP_RES:
+			panic("Not Implemented")
+		case OP_LEA:
+			panic("Not Implemented")
+		case OP_TRAP:
+			panic("Not Implemented")
 		}
 
 	}
@@ -86,9 +108,9 @@ func main() {
 }
 
 func add(instr uint16) {
-	dr := (instr >> 9) & 7
-	sr1 := (instr >> 6) & 7
-	mode := (instr >> 5) & 1
+	dr := (instr >> 9) & 0x0007
+	sr1 := (instr >> 6) & 0x0007
+	mode := (instr >> 5) & 0x0001
 	var operand2 uint16
 
 	// IF mode == 0 register mode
@@ -109,25 +131,33 @@ func add(instr uint16) {
 }
 
 func ld(instr uint16) {
-	dr := (instr >> 9) & 7
-	offset9 := instr & 0x00FF
+	dr := (instr >> 9) & 0x0007
+	offset9 := instr & 0x01FF
 	offset := signExtend(offset9, 9)
 	reg[dr] = memory[reg[R_PC]+offset]
 	updateFlag(dr)
 }
 
+func st(instr uint16) {
+	sr := (instr >> 9) & 0x0007
+	offset9 := instr & 0x01FF
+	offset := signExtend(offset9, 9)
+
+	memory[reg[R_PC]+offset] = reg[sr]
+}
+
 func and(instr uint16) {
 
-	dr := (instr >> 9) & 7
-	sr1 := (instr >> 6) & 7
-	mode := (instr >> 5) & 1
+	dr := (instr >> 9) & 0x0007
+	sr1 := (instr >> 6) & 0x0007
+	mode := (instr >> 5) & 0x0001
 	var operand2 uint16
 
 	if mode == 0 {
 		sr2 := OP_CODE(instr & 7)
 		operand2 = reg[sr2]
 	} else {
-		imd := instr & 31             // Immediate mode can have values from 0 to 2^5 - 1
+		imd := instr & 0x001F         // Immediate mode can have values from 0 to 2^5 - 1
 		operand2 = signExtend(imd, 5) // Sign extend it
 	}
 
@@ -137,9 +167,32 @@ func and(instr uint16) {
 
 }
 
+func ldr(instr uint16) {
+	dr := (instr >> 9) & 0x0007
+	base := (instr >> 6) & 0x0007
+
+	offset6 := instr & 0x00EF
+	offset := signExtend(offset6, 6)
+
+	reg[dr] = memory[reg[base]+offset]
+
+	updateFlag(dr)
+}
+
+func str(instr uint16) {
+	sr := (instr >> 9) & 0x0007
+	base := (instr >> 6) & 0x0007
+
+	offset6 := instr & 0x00EF
+	offset := signExtend(offset6, 6)
+
+	memory[reg[base]+offset] = reg[sr]
+
+}
+
 func not(instr uint16) {
-	dr := (instr >> 9) & 7
-	sr := (instr >> 6) & 7
+	dr := (instr >> 9) & 0x0007
+	sr := (instr >> 6) & 0x0007
 
 	reg[dr] = ^reg[sr]
 
@@ -148,11 +201,20 @@ func not(instr uint16) {
 }
 
 func ldi(instr uint16) {
-	dr := (instr >> 9) & 7
-	offset9 := instr & 0x00FF
+	dr := (instr >> 9) & 0x0007
+	offset9 := instr & 0x01FF
 	offset := signExtend(offset9, 9)
 	reg[dr] = memory[memory[reg[R_PC]+offset]]
 	updateFlag(dr)
+}
+
+func sti(instr uint16) {
+	sr := (instr >> 9) & 0x0007
+	offset9 := instr & 0x01FF
+	offset := signExtend(offset9, 9)
+
+	memory[memory[reg[R_PC]+offset]] = reg[sr]
+
 }
 
 func updateFlag(register uint16) {
