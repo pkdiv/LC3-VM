@@ -70,7 +70,7 @@ func main() {
 
 		switch op_code {
 		case OP_BR:
-			panic("Not Implemented")
+			Br(instr)
 		case OP_ADD:
 			Add(instr)
 		case OP_LD:
@@ -78,15 +78,14 @@ func main() {
 		case OP_ST:
 			St(instr)
 		case OP_JSR:
-			panic("Not Implemented")
+			Jsr(instr)
 		case OP_AND:
 			And(instr)
 		case OP_LDR:
 			Ldr(instr)
 		case OP_STR:
 			Str(instr)
-		case OP_RTI:
-			panic("Not Implemented")
+
 		case OP_NOT:
 			Not(instr)
 		case OP_LDI:
@@ -94,13 +93,15 @@ func main() {
 		case OP_STI:
 			Sti(instr)
 		case OP_JMP:
-			panic("Not Implemented")
+			Jmp(instr)
+		case OP_RTI:
 		case OP_RES:
-			panic("Not Implemented")
 		case OP_LEA:
-			panic("Not Implemented")
+			Lea(instr)
 		case OP_TRAP:
 			panic("Not Implemented")
+		default:
+			panic("Bad OP Code")
 		}
 
 	}

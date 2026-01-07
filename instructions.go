@@ -1,5 +1,19 @@
 package main
 
+func Br(instr uint16) {
+	n := (instr >> 11) & 1
+	z := (instr >> 10) & 1
+	p := (instr >> 9) & 1
+	offset := instr & 0x01FF
+
+	if (n == 0x0001 && reg[R_COND] == uint16(FLAG_NEG)) ||
+		(z == 0x0001 && reg[R_COND] == uint16(FLAG_ZERO)) ||
+		(p == 0x0001 && reg[R_COND] == uint16(FLAG_POS)) {
+		reg[R_PC] += offset
+	}
+
+}
+
 func Add(instr uint16) {
 	dr := (instr >> 9) & 0x0007
 	sr1 := (instr >> 6) & 0x0007
@@ -37,6 +51,24 @@ func St(instr uint16) {
 	offset := signExtend(offset9, 9)
 
 	memory[reg[R_PC]+offset] = reg[sr]
+}
+
+func Jsr(instr uint16) {
+
+	// Store the value of PC in R7 , links back to the calling funtions next instruction
+	reg[R_R7] = reg[R_PC]
+
+	mode := (instr >> 11) & 0x0001
+
+	if mode == 0 {
+		base := (instr >> 6) & 0x0007
+		reg[R_PC] = reg[base]
+	} else {
+		offset11 := instr & 0x0EFF
+		offset := signExtend(offset11, 11)
+		reg[R_PC] += offset
+	}
+
 }
 
 func And(instr uint16) {
@@ -108,6 +140,28 @@ func Sti(instr uint16) {
 
 	memory[memory[reg[R_PC]+offset]] = reg[sr]
 
+}
+
+func Jmp(instr uint16) {
+	base := (instr >> 6) & 0x0007
+
+	if base == 0x0007 {
+		reg[R_PC] = reg[base]
+	} else {
+		reg[R_PC] = reg[R_R7] // RET Instruction
+	}
+
+}
+
+func Lea(instr uint16) {
+
+	dr := (instr >> 9) & 0x0007
+	offset9 := instr & 0x01FF
+	offset := signExtend(offset9, 9)
+
+	reg[dr] = reg[R_PC] + offset
+
+	updateFlag(dr)
 }
 
 func updateFlag(register uint16) {
