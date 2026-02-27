@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	"os"
+)
+
 // Max memory supported by LC3 VM 128KB
 const MAX_MEMORY = 65536
 
@@ -52,6 +57,20 @@ var reg [R_COUNT]uint16
 
 func main() {
 
+	var image_path string
+
+	if len(os.Args) < 2 {
+		fmt.Println("Usage:")
+		fmt.Println("\tlc3vm [path to image]")
+	} else {
+		image_path = os.Args[1]
+	}
+	fmt.Println(image_path)
+
+	// vm()
+}
+
+func vm() {
 	// Initialize Conditional Register to zero
 	// PC to 0x3000
 	reg[R_COND] = uint16(FLAG_ZERO)
@@ -85,7 +104,6 @@ func main() {
 			Ldr(instr)
 		case OP_STR:
 			Str(instr)
-
 		case OP_NOT:
 			Not(instr)
 		case OP_LDI:
@@ -103,7 +121,5 @@ func main() {
 		default:
 			panic("Bad OP Code")
 		}
-
 	}
-
 }
